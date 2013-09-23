@@ -5,12 +5,16 @@
 
 # ToDo:
 # - log-function
-# - check, if wakeup time is on the same day (today or tomorrow
-# - show next rtcwake
-# - add rtcwake-command, not only echo
-# - array for weekdays
+# - code cleanup
+# - check time until next start. It should be higher than 5 mins
 
 DEBUG=true
+
+#set -x
+
+# define the daynames, insert a dummy, so that monday = 1
+# $DAYNAME[1] gives monday
+DAYNAME=(dummy monday tuesday wednesday thursday friday saturday sunday)
 
 AUTOWAKEUP_CONF="$1"
 if [ -z $1 ]; then
@@ -55,96 +59,116 @@ f_show_alarm() {
 	fi
 }
 
-f_monday() {
-	# tomorrow-date =monday
+f_show_rtcwake_date() {
+	FUNC_DATE="$1" # the day in the week as digit
+	FUNC_TODAY="$2" # true or false
+	if [ ! "$2" = "true" ]; then
+		echo "NEXTDAY wird gesetzt"
+		NEXTDAY="next ${DAYNAME[$FUNC_DATE]}"
+	fi
+	echo "NEXTDAY: $NEXTDAY"
+	echo "FUNC_DATE = $FUNC_DATE"
+	echo "rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[$1]}")"
+	echo "rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[$1]}" +%s)"
+	
+	# uncomment it to make it work!
+	#rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[$1]}") +%s
+}
 
-	# if monday has no start-time (="-"), check tuesday-start-time
-	if [ "${START_AT_DAY[1]}" = "-" ]; then
-		f_tuesday
-	else
-		if [ ! "$1" = "today" ]; then
-			echo "NEXTDAY wird gesetzt"
-			NEXTDAY="next monday"
+f_check_rtc_date() {
+	DAYPARAM="$1" # WAKE_UP_DAY -> nr. of the day (monday = 1)
+	TODAYPARAM="$2" # TODAY = true/false
+
+	if [ "${START_AT_DAY[$DAYPARAM]}" = "-" ]; then
+		# no WAKE_UP time found
+		let DAYPARAM++
+		# if DAYPARAM is 8, go to 1 (monday)
+		if [ $DAYPARAM -gt 7 ]; then
+			DAYPARAM=1
 		fi
-			echo "rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[1]}")"
-			echo "rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[1]}" +%s)"
-	fi
-}
-
-f_tuesday() {
-	# tomorrow-date = tuesday
-
-	# if tuesday has no start-time (="-"), check wednesday-start-time
-	if [ "${START_AT_DAY[2]}" = "-" ]; then
-		f_wednesday
+		f_check_rtc_date $DAYPARAM
 	else
-		if [ ! $1 = "today" ]; then
-			$NEXTDAY="next tuesday"
-		fi
-		echo "rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[2]}")"
-		echo "rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[2]}" +%s)"
+		# if a WAKE_UP time is found
+		f_show_rtcwake_date $DAYPARAM $TODAYPARAM
 	fi
 }
 
-f_wednesday() {
-	# tomorrow-date = wednesday
-
-	# if wednesday has no start-time (="-"), check thursday-start-time
-	if [ "${START_AT_DAY[3]}" = "-" ]; then
-		f_thursday
-	else
-		echo "rtcwake -m no -l -t $(date -d "next wednesday ${START_AT_DAY[3]}")"
-		echo "rtcwake -m no -l -t $(date -d "next wednesday ${START_AT_DAY[3]}" +%s)"
-	fi
-}
-
-f_thursday() {
-	# tomorrow-date = thursday
-
-	# if thursday has no start-time (="-"), check friday-start-time
-	if [ "${START_AT_DAY[4]}" = "-" ]; then
-		f_friday
-	else
-		echo "rtcwake -m no -l -t $(date -d "next thursday ${START_AT_DAY[4]}")"
-		echo "rtcwake -m no -l -t $(date -d "next thursday ${START_AT_DAY[4]}" +%s)"
-	fi
-}
-
-f_friday() {
-	# tomorrow-date = friday
-
-	# if friday has no start-time (="-"), check saturday-start-time
-	if [ "${START_AT_DAY[5]}" = "-" ]; then
-		f_saturday
-	else
-		echo "rtcwake -m no -l -t $(date -d "next friday ${START_AT_DAY[5]}")"
-		echo "rtcwake -m no -l -t $(date -d "next friday ${START_AT_DAY[5]}" +%s)"
-	fi
-}
-
-f_saturday() {
-	# tomorrow-date =saturday
-
-	# if saturday has no start-time (="-"), check sunday-start-time
-	if [ "${START_AT_DAY[6]}" = "-" ]; then
-		f_sunday
-	else
-		echo "rtcwake -m no -l -t $(date -d "next friday ${START_AT_DAY[6]}")"
-		echo "rtcwake -m no -l -t $(date -d "next friday ${START_AT_DAY[6]}" +%s)"
-	fi
-}
-
-f_sunday() {
-	# tomorrow-date =sunday
-
-	# if sunday has no start-time (="-"), check monday-start-time
-	if [ "${START_AT_DAY[7]}" = "-" ]; then
-		f_monday
-	else
-		echo "rtcwake -m no -l -t $(date -d "next sunday ${START_AT_DAY[7]}")"
-		echo "rtcwake -m no -l -t $(date -d "next sunday ${START_AT_DAY[7]}" +%s)"
-	fi
-}
+# f_monday() {
+# 	# tomorrow-date =monday
+# 
+# 	# if monday has no start-time (="-"), check tuesday-start-time
+# 	if [ "${START_AT_DAY[1]}" = "-" ]; then
+# 		f_tuesday
+# 	else
+# 		f_show_rtcwake_date 1 "$1"
+# 	fi
+# }
+# 
+# f_tuesday() {
+# 	# tomorrow-date = tuesday
+# 
+# 	# if tuesday has no start-time (="-"), check wednesday-start-time
+# 	if [ "${START_AT_DAY[2]}" = "-" ]; then
+# 		f_wednesday
+# 	else
+# 		f_show_rtcwake_date 2 "$1"
+# 	fi
+# }
+# 
+# f_wednesday() {
+# 	# tomorrow-date = wednesday
+# 
+# 	# if wednesday has no start-time (="-"), check thursday-start-time
+# 	if [ "${START_AT_DAY[3]}" = "-" ]; then
+# 		f_thursday
+# 	else
+# 		f_show_rtcwake_date 3 "$1"
+# 	fi
+# }
+# 
+# f_thursday() {
+# 	# tomorrow-date = thursday
+# 
+# 	# if thursday has no start-time (="-"), check friday-start-time
+# 	if [ "${START_AT_DAY[4]}" = "-" ]; then
+# 		f_friday
+# 	else
+# 		f_show_rtcwake_date 4 "$1"
+# 	fi
+# }
+# 
+# f_friday() {
+# 	# tomorrow-date = friday
+# 
+# 	# if friday has no start-time (="-"), check saturday-start-time
+# 	if [ "${START_AT_DAY[5]}" = "-" ]; then
+# 		f_saturday
+# 	else
+# 		f_show_rtcwake_date 5 "$1"
+# 	fi
+# }
+# 
+# f_saturday() {
+# 	# tomorrow-date =saturday
+# 
+# 	# if saturday has no start-time (="-"), check sunday-start-time
+# 	if [ "${START_AT_DAY[6]}" = "-" ]; then
+# 		f_sunday
+# 	else
+# 		f_show_rtcwake_date 6 "$1"
+# 	fi
+# }
+# 
+# f_sunday() {
+# 	# tomorrow-date =sunday
+# 
+# 	# if sunday has no start-time (="-"), check monday-start-time
+# 	if [ "${START_AT_DAY[7]}" = "-" ]; then
+# 		f_monday
+# 	else
+# 		f_show_rtcwake_date 7 "$1"
+# 	fi
+# }
 
 f_show_alarm
 
@@ -181,40 +205,39 @@ if [ $ACT_TIME -gt $TODAY_START ]; then
 	# start-time is in the past
 	# use tomorrow -> actual day +1
 	WAKE_UP_DAY=$(date -d tomorrow +%u)
+	TODAY=false
 else
-	WAKE_UP_DAY="${ACT_DAY}today"
+	WAKE_UP_DAY="${ACT_DAY}"
+	TODAY=true
 fi
 
-echo "WAKE_UP_DAY: $WAKE_UP_DAY"
+echo "WAKE_UP_DAY: $WAKE_UP_DAY = ${DAYNAME[$WAKE_UP_DAY]}"
+echo "TODAY: $TODAY"
 
-case $WAKE_UP_DAY in
-	1)
-		f_monday
-		;;
-	1today)
-		f_monday today
-		;;
-	2)
-		f_tuesday
-		;;
-	2today)
-		f_tuesday today
-		;;
-	3)
-		f_wednesday
-		;;
-	4)
-		f_thursday
-		;;
-	5)
-		f_friday
-		;;
-	6)
-		f_saturday
-		;;
-	7)
-		f_sunday
-		;;
-esac
+f_check_rtc_date $WAKE_UP_DAY $TODAY
+
+# case $WAKE_UP_DAY in
+# 	1)
+# 		f_monday $TODAY
+# 		;;
+# 	2)
+# 		f_tuesday $TODAY
+# 		;;
+# 	3)
+# 		f_wednesday $TODAY
+# 		;;
+# 	4)
+# 		f_thursday $TODAY
+# 		;;
+# 	5)
+# 		f_friday $TODAY
+# 		;;
+# 	6)
+# 		f_saturday $TODAY
+# 		;;
+# 	7)
+# 		f_sunday $TODAY
+# 		;;
+# esac
 
 exit 0
