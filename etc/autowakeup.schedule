@@ -1,0 +1,26 @@
+#!/bin/bash
+
+##############################################################################
+# Define your wakeup-times below in
+# format "HH:MM" or "-" if disabled for that day
+
+# Monday
+START_AT_DAY[1]="04:00"
+
+# Tuesday
+START_AT_DAY[2]="-"
+
+# Wednesday
+START_AT_DAY[3]="-"
+
+# Thursday
+START_AT_DAY[4]="08:00"
+
+# Friday
+START_AT_DAY[5]="-"
+
+# Saturday
+START_AT_DAY[6]="-"
+
+# Sunday
+START_AT_DAY[7]="-" 
