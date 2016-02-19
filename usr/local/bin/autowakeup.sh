@@ -113,7 +113,7 @@ f_set_rtcwake_date() {
 	FUNC_DATE="$1" # the day in the week as digit
 	FUNC_TODAY="$2" # true or false
 	if [ ! "$2" = "true" ]; then
-		if $DEBUG; then _log "DEBUG: NEXTDAY wird gesetzt"; fi
+		if $DEBUG; then _log "DEBUG: NEXTDAY is set"; fi
 		NEXTDAY="next ${DAYNAME[$FUNC_DATE]}"
 	fi
 
