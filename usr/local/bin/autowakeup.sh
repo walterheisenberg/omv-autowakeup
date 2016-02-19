@@ -104,7 +104,7 @@ f_show_alarm() {
 #   name          : f_set_rtcwake_date
 #   parameter     : $1 = FUNC_DATE -> the day in the week as digit
 #                 : $2 = FUNC_TODAY -> true or false
-#                 :      if wkaeup-time is today then 'true' else 'false'
+#                 :      if wakeup-time is today then 'true' else 'false'
 #   global return : none
 #   return        : 0
 #
