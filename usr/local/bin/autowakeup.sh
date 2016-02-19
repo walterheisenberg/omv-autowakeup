@@ -117,10 +117,18 @@ f_set_rtcwake_date() {
 		NEXTDAY="next ${DAYNAME[$FUNC_DATE]}"
 	fi
 
+	# for systems with RTC clock set to UTC
+	if [ "$RTC_UTC" = "true" ]; then
+		RTCWAKE_CMD="rtcwake -m no -u -t"
+	# for systems with RTC clock set to local time
+	else
+		RTCWAKE_CMD="rtcwake -m no -l -t"
+	fi
 	if $DEBUG; then
 		_log "DEBUG: f_set_rtcwake_date: NEXTDAY: $NEXTDAY"
 		_log "DEBUG: f_set_rtcwake_date: FUNC_DATE = $FUNC_DATE"
-		_log "DEBUG: f_set_rtcwake_date: 'rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[$FUNC_DATE]}" +%s)'"
+		_log "DEBUG: f_set_rtcwake_date: RTC_UTC = $RTC_UTC"
+		_log "DEBUG: f_set_rtcwake_date: '$RTCWAKE_CMD $(date -d "$NEXTDAY ${START_AT_DAY[$FUNC_DATE]}" +%s)'"
 	fi
 	
 	if $FAKE; then
@@ -130,11 +138,12 @@ f_set_rtcwake_date() {
 		exit 0
 	else
 		# Set rtcwake
-		rtcwake -m no -l -t $(date -d "$NEXTDAY ${START_AT_DAY[$FUNC_DATE]}") +%s
+		$RTCWAKE_CMD $(date -d "$NEXTDAY ${START_AT_DAY[$FUNC_DATE]}" +%s)
 		if [ $? -eq 0 ]; then
 			_log "INFO: Set next wakeup time to $(date -d "$NEXTDAY ${START_AT_DAY[$FUNC_DATE]}")"
-			exit 0
+		$RTCWAKE_CMD	exit 0
 		else
+			_log "WARN: Logged as: $(whoami)"
 			_log "WARN: There was an error setting the wakeup time to $(date -d "$NEXTDAY ${START_AT_DAY[$FUNC_DATE]}")"
 			_log "WARN: Please check your start times, rtcwake and rights to set rtcwake. Exit"
 			exit 1
@@ -227,6 +236,7 @@ if $DEBUG ; then
 	_log "DEBUG: SYSLOG:    $SYSLOG"
 	_log "DEBUG: FAKE:      $FAKE"
 	_log "DEBUG: RTC_SHOW_MODE: $RTC_SHOW_MODE"
+	_log "DEBUG: RTC_UTC: $RTC_UTC"
 fi   # > if $DEBUG ;then
 
 # check, if at least one time-entry is in the config
